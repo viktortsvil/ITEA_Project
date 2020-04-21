@@ -12,7 +12,7 @@ from flask import Flask, request, abort
 
 bot = TeleBot(TOKEN)
 
-app = Flask.run(__name__)
+app = Flask(__name__)
 
 
 @app.route('/', methods=['POST'])
