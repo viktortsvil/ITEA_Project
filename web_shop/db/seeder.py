@@ -57,6 +57,12 @@ def create_characteristics(**kwargs):
     pass
 
 
+def create_text(**kwargs):
+    required_fields = ('text')
+    validated = [kwargs[arg] for arg in required_fields]
+    return Texts.objects.create(**kwargs).save()
+
+
 def create_category(**kwargs):
     required_fields = ('title', 'slug')
     validated = [kwargs[arg] for arg in required_fields]
@@ -106,6 +112,14 @@ def generate(customers=0, characteristics=0, category=0, product=0, news=0):
             continue
         create_news(**news_data)
         news -= 1
+    texts = ["Greeting"]
+    for text in texts:
+        text = {"text": text}
+        text_db = Texts.objects.filter(**text)
+        if text_db:
+            continue
+        create_text(**text)
+
 
 
 if __name__ == '__main__':
