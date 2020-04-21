@@ -58,7 +58,7 @@ def create_characteristics(**kwargs):
 
 
 def create_text(**kwargs):
-    required_fields = ('text')
+    required_fields = ('text',)
     validated = [kwargs[arg] for arg in required_fields]
     return Texts.objects.create(**kwargs).save()
 
