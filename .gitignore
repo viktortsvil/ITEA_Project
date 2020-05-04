@@ -1,3 +1,2 @@
 /venv/
-/venv/
-*.pyc
+/web_shop/bot/local_config.py
