@@ -1,18 +1,22 @@
-from telebot import TeleBot, types
+from .webshopbot import WebShopBot
 from .config import TOKEN
-from ..db.models import Category, Texts, News, Product
+from ..db.models import Category, Texts, News, Product, Customer, Cart
 from .keyboard import START_KB
 from telebot.types import (
-    ReplyKeyboardMarkup,
     KeyboardButton,
     InlineKeyboardButton,
-    InlineKeyboardMarkup,
     Update)
+from telebot import apihelper
 from flask import Flask, request, abort
+from timeloop import Timeloop
+from datetime import timedelta
+from ..db.user_data_validators import is_phone_valid
+from ..log_writer import log_write
+from .texts import set_params_text
 
-bot = TeleBot(TOKEN)
-
+bot = WebShopBot(TOKEN)
 app = Flask(__name__)
+t1 = Timeloop()
 
 
 @app.route('/', methods=['POST'])
@@ -26,125 +30,145 @@ def process_webhook():
         abort(status=403)
 
 
+# START
 @bot.message_handler(commands=['start'])
 def start(message):
-    kb = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    customer = Customer.objects.filter(user_id=message.chat.id)
+    if not customer:
+        Customer.objects.create(user_id=message.chat.id)
+
     buttons = [KeyboardButton(value) for value in START_KB.values()]
-    kb.add(*buttons)
-
-    # print(type(message))
-    # kb = types.InlineKeyboardMarkup(row_width=2)
-    # buttons = [types.InlineKeyboardButton(c.title, callback_data='category-'+c.slug) for c in Category.objects]
-    # kb.add(*buttons)
-
     text = Texts.objects.filter(text='Greeting')[0].text
-    bot.send_message(
-        chat_id=message.chat.id,
-        text=text,
-        reply_markup=kb
-    )
+    bot.send_message_or_photo(chat_id=message.chat.id, text=text, kb=bot.generate_reply_keyboard(buttons))
 
 
+# START -> CART
+@bot.message_handler(func=lambda msg: msg.text == START_KB['cart'])
+def show_cart(message):
+    print('cart')
+    customer = Customer.objects.filter(user_id=message.chat.id)
+    if not customer:
+        customer = Customer.objects.create(user_id=message.chat.id)
+    else:
+        customer = customer[0]
+    bot.load_cart_data(customer, message.chat.id)
+
+
+# START -> CART -> remove
+@bot.callback_query_handler(func=lambda call: call.data.startswith('minus-'))
+def remove_product(call):
+    product_id = ''.join(call.data.split('-')[1::])
+    customer = Customer.objects.filter(user_id=call.message.chat.id)[0]
+    bot.remove_product_from_cart(product_id, customer)
+    bot.update_cart_data(customer, call.message.chat.id, call.message.message_id)
+
+
+# START -> CART -> add
+@bot.callback_query_handler(func=lambda call: call.data.startswith('plus-'))
+def add_product(call):
+    product_id = ''.join(call.data.split('-')[1::])
+    customer = Customer.objects.filter(user_id=call.message.chat.id)[0]
+    bot.add_product_to_cart(product_id, customer)
+    bot.update_cart_data(customer, call.message.chat.id, call.message.message_id)
+
+
+# START -> CART -> order goods
+@bot.callback_query_handler(func=lambda call: call.data.startswith('order-goods'))
+def order_goods(call):
+    customer = Customer.objects.filter(user_id=call.message.chat.id)[0]
+    cart = customer.get_or_create_current_cart()[1]
+    if len(cart.cart_items):
+        is_valid, text = bot.is_customer_data_valid(customer)
+        if not is_valid:
+            bot.send_message_or_photo(call.message.chat.id, text)
+        else:
+            cart.archive()
+            bot.edit_message(call.message.chat.id, "Goods successfully ordered", call.message.message_id)
+    else:
+        bot.edit_message(call.message.chat.id, "No goods to order", call.message.message_id)
+
+
+# START -> OLD ORDERS
+@bot.message_handler(func=lambda msg: msg.text == START_KB['history'])
+def get_categories(message):
+    customer = Customer.objects.filter(user_id=message.chat.id)[0]
+    old_orders = Cart.objects.filter(customer=customer, is_archived=True)
+    if len(old_orders):
+        for old_cart in old_orders:
+            text, kb = bot.generate_cart_message_data(old_cart, False)
+            bot.send_message_or_photo(message.chat.id, text)
+    else:
+        bot.send_message_or_photo(message.chat.id, "You have not ordered anything yet :(")
+
+
+# START -> CATEGORIES
 @bot.message_handler(func=lambda msg: msg.text == START_KB['categories'])
 def get_categories(message):
     categories = Category.get_root()
-    kb = InlineKeyboardMarkup(row_width=2)
     buttons = [InlineKeyboardButton(text=category.title, callback_data=f"category-{category.id}") for category in
                categories]
-    kb.add(*buttons)
-    bot.send_message(
-        chat_id=message.chat.id,
-        text="Выберите Категорию",
-        reply_markup=kb
-    )
+    bot.send_message_or_photo(chat_id=message.chat.id, text="Выберите Категорию",
+                              kb=bot.generate_inline_keyboard(buttons, row_width=2))
 
 
+# START -> CATEGORIES -> category (recursive)
 @bot.callback_query_handler(func=lambda call: call.data.startswith('category-'))
 def category_handler(call):
     category_id = ''.join(call.data.split('-')[1::])
     category = Category.objects.get(id=category_id)
     if category.subcategories:
-        kb = InlineKeyboardMarkup(row_width=2)
-        buttons = []
-        if category.parent:
-            buttons += [InlineKeyboardButton(text='<- Back <-', callback_data=f"category-{category.parent.id}")]
-        buttons += [InlineKeyboardButton(text=category.title, callback_data=f"category-{category.id}") for category in
-                    category.subcategories]
-        kb.add(*buttons)
-
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            text=category.title,
-            reply_markup=kb,
-            message_id=call.message.message_id
-        )
-    else:
-        for product in category.products:
-            kb = InlineKeyboardMarkup()
-            button = InlineKeyboardButton(text="Add to Cart", callback_data=f"product-{product.id}")
-            kb.add(button)
-            bot.send_photo(
-                chat_id=call.message.chat.id,
-                photo=product.image.read(),
-                caption=product.description,
-                reply_markup=kb,
-                disable_notification=True
-            )
+        bot.load_subcategories(category, call.message.chat.id, call.message.message_id)
+    elif category.is_leaf:
+        bot.load_category_products(category, call.message.chat.id)
 
 
-# @bot.callback_query_handler(func=lambda call: call.data.startswith('product-'))
-
-
+# START -> NEWS
 @bot.message_handler(func=lambda msg: msg.text == START_KB['news'])
 def get_news(message):
     news = News.objects.filter()
-    kb = InlineKeyboardMarkup(row_width=1)
-    buttons = [InlineKeyboardButton(text=i.title, callback_data=f"news-{i.id}") for i in news]
-    kb.add(*buttons)
-    bot.send_message(
-        chat_id=message.chat.id,
-        text=START_KB['news'],
-        reply_markup=kb
-    )
+    buttons = [InlineKeyboardButton(text=i.title, callback_data=f"news-{i.id}") for i in news[:4]]
+    bot.send_message_or_photo(message.chat.id, START_KB['news'], bot.generate_inline_keyboard(buttons, row_width=1))
 
 
+# START -> NEWS -> news
 @bot.callback_query_handler(func=lambda call: call.data.startswith('news-'))
 def get_certain_news(call):
-    news_id = call.data.split('-')[-1]
+    news_id = ''.join(call.data.split('-')[1::])
     news = News.objects.get(id=news_id)
-    bot.send_message(
-        chat_id=call.from_user.id,
-        text=f"{news.title}\n\n{news.body}"
-    )
+    bot.send_message_or_photo(call.from_user.id, f"{news.title}\n\n{news.body}")
 
 
+# START -> DISCOUNTS
 @bot.message_handler(func=lambda msg: msg.text == START_KB['discount_products'])
 def get_discount_products(message):
     products = Product.get_discount_products()
-    kb = InlineKeyboardMarkup(row_width=1)
-    buttons = [InlineKeyboardButton(text=i.title, callback_data=f"product-{i.id}") for i in products]
-    kb.add(*buttons)
-    bot.send_message(
-        chat_id=message.chat.id,
-        text=START_KB['discount_products'],
-        reply_markup=kb
-    )
+    bot.load_products(products, message.chat.id)
 
 
+# START -> DISCOUNTS -> product
+# START -> CATEGORIES -> category -> product
 @bot.callback_query_handler(func=lambda call: call.data.startswith('product-'))
 def get_certain_product(call):
     product_id = call.data.split('-')[-1]
     product = Product.objects.get(id=product_id)
-    bot.send_message(
-        chat_id=call.from_user.id,
-        text=f"{product.title}\n\nPrice: {product.price}" +
-             f"\nDiscount: {product.discount_percentage}%" if product.discount_percentage else f""
-    )
+
+    customer = Customer.objects.filter(user_id=call.from_user.id)
+    if customer:
+        customer = customer[0]
+        cart = customer.get_or_create_current_cart()[1]
+        cart.add_item(product)
+        bot.send_message_or_photo(call.from_user.id, f"{product.title} was added to your cart")
+    else:
+        bot.send_message_or_photo(call.from_user.id, f"Press /start to see what this bot can do")
 
 
-def start_bot():
-    print("Initializing the bot")
-    bot.polling()
+# SET_[NAME/SURNAME/ADDRESS/PHONE_NUMBER/AGE] param_data
+@bot.message_handler(commands=['set_name', 'set_surname', 'set_address', 'set_phone_number', 'set_age'])
+def set_data(message):
+    customer = Customer.objects.filter(user_id=message.chat.id)[0]
+    param: str = '_'.join(message.text.split('_')[1:]).split(' ')[0]
+    param_data: str = ' '.join(message.text.split(' ')[1:])
+    bot.set_customer_data(customer, param, param_data, message.chat.id)
 
 
 def set_webhook():
@@ -155,3 +179,22 @@ def set_webhook():
         url='https://216.250.119.29/tg',
         certificate=open('web_shop/bot/webhook_cert.pem', 'r')
     )
+
+
+@t1.job(interval=timedelta(minutes=15))
+def users_activity_check():
+    customers = Customer.objects
+    log_write("Blocked users collector started running")
+    blocked = 0
+    for customer in customers:
+        try:
+            bot.send_chat_action(customer.user_id, 'typing')
+            customer.is_blocked = False
+        except apihelper.ApiException as e:
+            customer.is_blocked = True
+            blocked += 1
+        customer.save()
+    log_write(f"Collector found {blocked} blocked users")
+
+
+t1.start(block=False)

@@ -1,3 +1,8 @@
 TOKEN = '1173186926:AAEDr0YjZBbgfWSrWSRd0EE3jz9CsxjJ0-8'
 DEBUG = False
-LOCAL_TOKEN = '1258690278:AAF4Gtrg1q9WtEGKF86DGbEyaGWtngVW4Y8'
+
+
+try:
+    from .local_config import *
+except ImportError:
+    print("Running in production mode")

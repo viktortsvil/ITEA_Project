@@ -2,7 +2,9 @@ import mongoengine as me
 import datetime
 from typing import Tuple
 
-me.connect('SHOP_DB')
+#me.connect('SHOP_DB')
+me.connect('SHOP_DB_TEST')
+
 
 
 class Customer(me.Document):
@@ -12,7 +14,8 @@ class Customer(me.Document):
     address = me.StringField()
     name = me.StringField(min_length=1, max_length=256)
     surname = me.StringField(min_length=1, max_length=256)
-    age = me.IntField(min_value=12, max_value=99)
+    age = me.IntField(min_value=10, max_value=99)
+    is_blocked = me.BooleanField(default=False)
 
     def get_or_create_current_cart(self) -> Tuple[bool, 'Cart']:
         created = False
@@ -30,7 +33,7 @@ class Customer(me.Document):
 
 class CartItem(me.EmbeddedDocument):
     product = me.ReferenceField('Product')
-    count = me.IntField(min_value=1)
+    count = me.IntField(default=1, min_value=1)
 
     @property
     def get_price(self):
@@ -48,9 +51,10 @@ class Cart(me.Document):
     cart_items = me.EmbeddedDocumentListField('CartItem')
     is_archived = me.BooleanField(default=False)
 
-    def add_item(self, item: CartItem):
+    def add_item(self, product):
+        item = CartItem(product=product)
         if item in self.cart_items:
-            self.cart_items[self.cart_items.index(item)].quantity += 1
+            self.cart_items[self.cart_items.index(item)].count += 1
         else:
             self.cart_items.append(item)
         self.save()

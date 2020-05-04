@@ -5,6 +5,8 @@ from telebot.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Update)
+from .texts import set_params_text
+from ..db.user_data_validators import is_phone_valid
 
 from typing import List, Union
 
@@ -41,8 +43,14 @@ class WebShopBot(TeleBot):
     def load_products(self, products, chat_id):
         for product in products:
             buttons = [InlineKeyboardButton(text="Add to Cart", callback_data=f"product-{product.id}")]
-            self.send_message_or_photo(chat_id, product.description, self.generate_inline_keyboard(buttons),
+            self.send_message_or_photo(chat_id,
+                                       f"{product.title}\n{product.description}\n"
+                                       f"Category: {product.category.title}\nPrice: {product.price}",
+                                       self.generate_inline_keyboard(buttons),
                                        product.image.read() if product.image else None)
+        if len(products) == 0:
+            self.send_message_or_photo(chat_id,
+                                       f"This category contains no products so far")
 
     def load_subcategories(self, category, chat_id, message_id):
         buttons = []
@@ -56,7 +64,7 @@ class WebShopBot(TeleBot):
     def load_category_products(self, category, chat_id):
         self.load_products(category.products, chat_id)
 
-    def generate_cart_message_data(self, cart):
+    def generate_cart_message_data(self, cart, load_buttons=True):
         text = "Your cart:\n"
         total = 0
         buttons = []
@@ -68,10 +76,10 @@ class WebShopBot(TeleBot):
                         InlineKeyboardButton(text='+', callback_data=f"plus-{item.product.id}")]
         text += f"Total cost: {total}"
         buttons += [InlineKeyboardButton(text="Order", callback_data='order-goods')]
-        kb = self.generate_inline_keyboard(buttons)
+        kb = self.generate_inline_keyboard(buttons) if load_buttons else None
         return text, kb
 
-    def load_cart_data(self, customer, chat_id):
+    def load_cart_data(self, customer, chat_id, load_buttons=True):
         cart = customer.get_or_create_current_cart()[1]
         text, kb = self.generate_cart_message_data(cart)
         self.send_message_or_photo(chat_id, text, kb)
@@ -101,3 +109,39 @@ class WebShopBot(TeleBot):
         if pop:
             cart.cart_items.pop(pop)
         cart.save()
+
+    def set_customer_data(self, customer, param, param_data, chat_id):
+        if not param_data:
+            self.send_message_or_photo(chat_id, set_params_text)
+            return None
+        if param == 'name':
+            customer.name = param_data
+        elif param == 'surname':
+            customer.surname = param_data
+        elif param == 'address':
+            customer.address = param_data
+        elif param == 'phone_number':
+            if is_phone_valid(param_data):
+                customer.phone_number = param_data
+            else:
+                self.send_message_or_photo(chat_id, "Invalid phone format. Valid format is: +380971415241")
+                return None
+        elif param == 'age':
+            customer.age = param_data
+        customer.save()
+        self.send_message_or_photo(chat_id, f"Parameter {param} was successfully set!")
+
+    def is_customer_data_valid(self, customer):
+        name = True if customer.name is not None else False
+        surname = True if customer.surname is not None else False
+        address = True if customer.address is not None else False
+        phone_number = True if customer.phone_number is not None else False
+        age = True if customer.age is not None else False
+        if not all([name, surname, address, phone_number, age]):
+            return False, f"We miss following information about you to finish the order: " \
+                   f"{'name, ' if not name else ''}" \
+                   f"{'surname, ' if not surname else ''}" \
+                   f"{'address, ' if not address else ''}" \
+                   f"{'phone_number, ' if not phone_number else ''}" \
+                   f"{'age' if not age else ''}.\n\n" + set_params_text
+        return True, ''
