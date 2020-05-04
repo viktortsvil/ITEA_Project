@@ -130,7 +130,7 @@ def generate(category=0, product=0, news=0):
 
 
 def seed():
-    a = input("Run seeder? Y/n")
+    a = input("Are you sure you want to run seeder? Y/n")
     if a.lower() == 'y':
         print("Seeder running")
-        generate(category=int(input("Categories: ")), product=int(input("Products: ")), news=int(input("News: ")))
+        generate(category=int(input("Category: ")), product=int(input("Products: ")), news=int(input("News: ")))

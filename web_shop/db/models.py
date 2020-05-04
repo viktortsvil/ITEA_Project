@@ -6,7 +6,6 @@ from typing import Tuple
 me.connect('SHOP_DB_TEST')
 
 
-
 class Customer(me.Document):
     user_id = me.IntField(unique=True)
     username = me.StringField(min_length=1, max_length=256)
@@ -137,3 +136,13 @@ class Texts(me.Document):
 
     def __str__(self):
         return self.text
+
+
+def is_db_empty():
+    result = False
+    try:
+        ctg = Category.objects
+        if len(ctg) == 0:
+            result = True
+    finally:
+        return result
