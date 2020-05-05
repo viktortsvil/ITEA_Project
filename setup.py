@@ -11,6 +11,8 @@ if __name__ == '__main__':
     if is_db_empty():
         generate(category=10, product=25, news=5)
     if not DEBUG:
+        log_write("Starting API...")
+        print("STARTING API")
         startAPI()
         log_write("API STARTED SUCCESSFULLY")
         set_webhook()
