@@ -6,6 +6,8 @@ from web_shop.api.setup import start as startAPI
 from web_shop.log_writer import log_write, log_clear
 #gunicorn --reload
 
+
+print("NOT MAIN")
 if __name__ == '__main__':
     print("STARTING LOGGING..")
     log_clear()
