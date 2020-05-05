@@ -1,2 +1,3 @@
 /venv/
 /web_shop/bot/local_config.py
+*.pem
