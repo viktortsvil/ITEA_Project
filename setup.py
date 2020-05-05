@@ -11,7 +11,7 @@ if __name__ == '__main__':
     if not DEBUG:
         startAPI()
         set_webhook()
-        app.run(port=8000)
+        app.run(host="216.250.119.29", port=8000)
     else:
         startAPI()
         print("API STARTED SUCCESSFULLY")
