@@ -1,3 +1,5 @@
 /venv/
 /web_shop/bot/local_config.py
+/logs.txt
 *.pem
+*.pyc
