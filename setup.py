@@ -18,6 +18,6 @@ if __name__ == '__main__':
         app.run(port=8000)
     else:
         startAPI()
-        print("API STARTED SUCCESSFULLY")
+        log_write("API STARTED SUCCESSFULLY")
         app.run(port=8000)
         bot.polling()
