@@ -7,18 +7,17 @@ from web_shop.log_writer import log_write, log_clear
 #gunicorn --reload
 
 
-print("NOT MAIN")
-print("STARTING LOGGING..")
 log_clear()
+log_write("STARTING LOGGING..")
 if is_db_empty():
     generate(category=10, product=25, news=5)
 if not DEBUG:
-    log_write("Starting API...")
-    print("STARTING API")
+    log_write("STARTING API")
     startAPI()
     log_write("API STARTED SUCCESSFULLY")
     set_webhook()
     log_write("WEBHOOK SET SUCCESSFULLY")
+    log_write("STARTING SERVER")
     app.run(port=8000)
 else:
     startAPI()
