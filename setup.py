@@ -7,6 +7,7 @@ from web_shop.log_writer import log_write, log_clear
 #gunicorn --reload
 
 if __name__ == '__main__':
+    print("STARTING LOGGING..")
     log_clear()
     if is_db_empty():
         generate(category=10, product=25, news=5)
