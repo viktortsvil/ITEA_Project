@@ -8,21 +8,20 @@ from web_shop.log_writer import log_write, log_clear
 
 
 print("NOT MAIN")
-if __name__ == '__main__':
-    print("STARTING LOGGING..")
-    log_clear()
-    if is_db_empty():
-        generate(category=10, product=25, news=5)
-    if not DEBUG:
-        log_write("Starting API...")
-        print("STARTING API")
-        startAPI()
-        log_write("API STARTED SUCCESSFULLY")
-        set_webhook()
-        log_write("WEBHOOK SET SUCCESSFULLY")
-        app.run(port=8000)
-    else:
-        startAPI()
-        log_write("API STARTED SUCCESSFULLY")
-        app.run(port=8000)
-        bot.polling()
+print("STARTING LOGGING..")
+log_clear()
+if is_db_empty():
+    generate(category=10, product=25, news=5)
+if not DEBUG:
+    log_write("Starting API...")
+    print("STARTING API")
+    startAPI()
+    log_write("API STARTED SUCCESSFULLY")
+    set_webhook()
+    log_write("WEBHOOK SET SUCCESSFULLY")
+    app.run(port=8000)
+else:
+    startAPI()
+    log_write("API STARTED SUCCESSFULLY")
+    app.run(port=8000)
+    bot.polling()
