@@ -1,7 +1,7 @@
-from .webshopbot import WebShopBot
-from .config import TOKEN
-from ..db.models import Category, Texts, News, Product, Customer, Cart
-from .keyboard import START_KB
+from web_shop.bot.webshopbot import WebShopBot
+from web_shop.bot.config import TOKEN
+from web_shop.db.models import Category, Texts, News, Product, Customer, Cart
+from web_shop.bot.keyboard import START_KB
 from telebot.types import (
     KeyboardButton,
     InlineKeyboardButton,
@@ -11,7 +11,7 @@ from flask import Flask, request, abort
 from timeloop import Timeloop
 from datetime import timedelta
 from ..db.user_data_validators import is_phone_valid
-from ..log_writer import log_write
+from web_shop.log_writer import log_write
 from .texts import set_params_text
 
 bot = WebShopBot(TOKEN)
