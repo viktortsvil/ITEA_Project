@@ -3,3 +3,4 @@
 /logs.txt
 *.pem
 *.pyc
+*.cpython-36.pyc
