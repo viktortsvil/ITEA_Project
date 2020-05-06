@@ -1,6 +1,10 @@
 /venv/
 /web_shop/bot/local_config.py
 /logs.txt
+/__pycache__/*
+/web_shop/__pycache__/*
+/web_shop/api/__pycache__/*
+/web_shop/db/__pycache__/*
+/web_shop/bot/__pycache__/*
+
 *.pem
-*.pyc
-*.cpython-36.pyc
