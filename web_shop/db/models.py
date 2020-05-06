@@ -5,6 +5,10 @@ from typing import Tuple
 #me.connect('SHOP_DB')
 me.connect('SHOP_DB_TEST')
 
+ValidationError = me.ValidationError
+NotUniqueError = me.NotUniqueError
+OperationError = me.OperationError
+DoesNotExist = me.DoesNotExist
 
 class Customer(me.Document):
     user_id = me.IntField(unique=True)
@@ -13,7 +17,7 @@ class Customer(me.Document):
     address = me.StringField()
     name = me.StringField(min_length=1, max_length=256)
     surname = me.StringField(min_length=1, max_length=256)
-    age = me.IntField(min_value=10, max_value=99)
+    age = me.IntField(min_value=1, max_value=99)
     is_blocked = me.BooleanField(default=False)
 
     def get_or_create_current_cart(self) -> Tuple[bool, 'Cart']:
@@ -72,7 +76,7 @@ class Characteristics(me.EmbeddedDocument):
 class Category(me.Document):
     title = me.StringField(required=True, min_length=2, max_length=512)
     slug = me.StringField(required=True, min_length=2, max_length=512, unique=True)
-    description = me.StringField(min_length=2, max_length=2048)
+    description = me.StringField(max_length=2048)
     subcategories = me.ListField(me.ReferenceField('self'))
     parent = me.ReferenceField('self')
 
