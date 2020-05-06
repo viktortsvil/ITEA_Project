@@ -162,46 +162,46 @@ class CategoryResource(Resource):
 class CustomerResource(Resource):
 
     def get(self, customer_id=None):
-        return GlobalResource.get(m.Customer, s.CustomerSchema, 'category', customer_id)
+        return GlobalResource.get(m.Customer, s.CustomerSchema, 'customer', customer_id)
 
     def post(self):
         return GlobalResource.post(m.Customer, s.CustomerSchema, 'customer')
 
     def put(self, customer_id=None):
-        return GlobalResource.put(m.Customer, s.CustomerSchema, 'category', customer_id)
+        return GlobalResource.put(m.Customer, s.CustomerSchema, 'customer', customer_id)
 
     def delete(self, customer_id=None):
-        return GlobalResource.delete(m.Customer, 'category', customer_id)
+        return GlobalResource.delete(m.Customer, 'customer', customer_id)
 
 
 class CartResource(Resource):
 
-    def get(self):
-        pass
+    def get(self, cart_id=None):
+        return GlobalResource.get(m.Cart, s.CartSchema, 'cart', cart_id)
 
     def post(self):
-        pass
+        return GlobalResource.post(m.Cart, s.CartSchema, 'cart')
 
-    def put(self):
-        pass
+    def put(self, cart_id=None):
+        return GlobalResource.put(m.Cart, s.CartSchema, 'cart', cart_id)
 
-    def delete(self):
-        pass
+    def delete(self, cart_id=None):
+        return GlobalResource.delete(m.Cart, 'cart', cart_id)
 
 
 class ProductResource(Resource):
 
-    def get(self):
-        pass
+    def get(self, product_id=None):
+        return GlobalResource.get(m.Product, s.ProductSchema, 'product', product_id)
 
     def post(self):
-        pass
+        return GlobalResource.post(m.Product, s.ProductSchema, 'product')
 
-    def put(self):
-        pass
+    def put(self, product_id=None):
+        return GlobalResource.put(m.Product, s.ProductSchema, 'product', product_id)
 
-    def delete(self):
-        pass
+    def delete(self, product_id=None):
+        return GlobalResource.delete(m.Product, 'product', product_id)
 
 
 class TextsResource(Resource):
