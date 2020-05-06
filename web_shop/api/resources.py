@@ -81,88 +81,43 @@ class GlobalResource:
         return jsonify(result)
 
 
-
-
 class CategoryResource(Resource):
 
     def get(self, category_id=None):
         return GlobalResource.get(m.Category, s.CategorySchema, 'category', category_id)
-        if category_id:
-            try:
-                category = m.Category.objects.get(id=category_id)
-                result = s.CategorySchema().dump(category)
-                log_write(f"Successful attempt to reach REST API GET -> 'category' with id {category_id}")
-            except (s.ValidationError, m.ValidationError, m.DoesNotExist) as e:
-                log_write(
-                    f"Unsuccessful attempt to reach REST API GET -> 'category' with id {category_id}. Error: {str(e)}")
-                result = str(e)
-        else:
-            categories = m.Category.objects
-            try:
-                result = s.CategorySchema().dump(categories, many=True)
-                log_write(f"Successful attempt to reach REST API GET -> 'category'")
-            except s.ValidationError as e:
-                log_write(f"Unsuccessful attempt to reach REST API GET -> 'category'. Error: {str(e)}")
-                result = str(e)
-        return jsonify(result)
 
     def post(self):
         return GlobalResource.post(m.Category, s.CategorySchema, 'category')
-        try:
-            category = s.CategorySchema().load(request.get_json())
-            result = s.CategorySchema().dump(m.Category.objects.create(**category))
-            log_write(f"Successful attempt to reach REST API POST -> 'category'")
-        except (s.ValidationError, m.NotUniqueError) as e:
-            log_write(f"Unsuccessful attempt to reach REST API POST -> 'category'. Error: {str(e)}")
-            result = str(e)
-        return jsonify(result)
 
     def put(self, category_id=None):
         return GlobalResource.put(m.Category, s.CategorySchema, 'category', category_id)
-        try:
-            category = m.Category.objects.get(id=category_id)
-            json: dict = s.CategorySchema().dump(category)
-            json.update(request.get_json())
-
-            njson = {}
-            for key, value in json.items():
-                if json[key]:
-                    njson[key] = value
-            json = njson
-
-            json = s.CategorySchema().load(json)
-            category.update(**json)
-            category.reload()
-            result = s.CategorySchema().dump(category)
-            log_write(f"Successful attempt to reach REST API PUT -> 'category' with id {category_id}")
-        except (s.ValidationError, m.ValidationError, m.NotUniqueError, m.DoesNotExist) as e:
-            log_write(
-                f"Unsuccessful attempt to reach REST API PUT -> 'category' with id {category_id}. Error: {str(e)}")
-            result = str(e)
-        return jsonify(result)
 
     def delete(self, category_id=None):
         return GlobalResource.delete(m.Category, 'category', category_id)
-        if category_id:
-            try:
-                category = m.Category.objects.get(id=category_id)
-                category.delete()
-                result = {'status': 'OK'}
-            except (m.OperationError, m.ValidationError, m.DoesNotExist) as e:
-                log_write(
-                    f"Unsuccessful attempt to reach REST API DELETE -> 'category' with id {category_id}. Error: {str(e)}")
-                result = str(e)
-        else:
-            log_write(
-                f"Unsuccessful attempt to reach REST API DELETE -> 'category'. Error: parameter 'id' not specified!")
-            result = {'status': 'Error'}
-        return jsonify(result)
 
 
 class CustomerResource(Resource):
 
-    def get(self, customer_id=None):
-        return GlobalResource.get(m.Customer, s.CustomerSchema, 'customer', customer_id)
+    def get(self, customer_id=None, property_name=None):
+        if property_name is None:
+            return GlobalResource.get(m.Customer, s.CustomerSchema, 'customer', customer_id)
+        else:
+            if property_name == 'carts':
+                try:
+                    customer = m.Customer.objects.get(id=customer_id)
+                    carts = m.Cart.objects.filter(customer=customer)
+                    result = s.CartSchema().dump(carts, many=True)
+                    log_write(f"Successful attempt to reach REST API GET -> 'customer' with id {customer_id}")
+                except (s.ValidationError, m.ValidationError, m.DoesNotExist) as e:
+                    log_write(
+                        f"Unsuccessful attempt to reach REST API GET -> 'customer' with id {customer_id}. Error: {str(e)}")
+                    result = str(e)
+                return jsonify(result)
+            else:
+                log_write(
+                    f"Unsuccessful attempt to reach REST API GET -> 'customer' with id {customer_id}. Property {property_name} is invalid")
+                result = {"Status": "Error"}
+                return jsonify(result)
 
     def post(self):
         return GlobalResource.post(m.Customer, s.CustomerSchema, 'customer')
@@ -206,29 +161,29 @@ class ProductResource(Resource):
 
 class TextsResource(Resource):
 
-    def get(self):
-        pass
+    def get(self, text_id=None):
+        return GlobalResource.get(m.Texts, s.TextsSchema, 'text', text_id)
 
     def post(self):
-        pass
+        return GlobalResource.post(m.Texts, s.TextsSchema, 'text')
 
-    def put(self):
-        pass
+    def put(self, text_id=None):
+        return GlobalResource.put(m.Texts, s.TextsSchema, 'text', text_id)
 
-    def delete(self):
-        pass
+    def delete(self, text_id=None):
+        return GlobalResource.delete(m.Texts, 'text', text_id)
 
 
 class NewsResource(Resource):
 
-    def get(self):
-        pass
+    def get(self, news_id=None):
+        return GlobalResource.get(m.News, s.NewsSchema, 'news', news_id)
 
     def post(self):
-        pass
+        return GlobalResource.post(m.News, s.NewsSchema, 'news')
 
-    def put(self):
-        pass
+    def put(self, news_id=None):
+        return GlobalResource.put(m.News, s.NewsSchema, 'news', news_id)
 
-    def delete(self):
-        pass
+    def delete(self, news_id=None):
+        return GlobalResource.delete(m.News, 'news', news_id)

@@ -61,3 +61,15 @@ class ProductSchema(Schema):
     discount_percentage = fields.Integer(validate=validate.Range(0, 100), default=0)
     category = fields.Nested('CategorySchema', exclude=['subcategories', 'parent'])
     image = fields.Field(load_only=True)
+
+
+class NewsSchema(Schema):
+    id = fields.String()
+    title = fields.String(validate=validate.Length(min=2, max=512))
+    body = fields.String(validate=validate.Length(min=10, max=4096))
+    pub_date = fields.DateTime()
+
+
+class TextsSchema(Schema):
+    id = fields.String()
+    text = fields.String(required=True)
