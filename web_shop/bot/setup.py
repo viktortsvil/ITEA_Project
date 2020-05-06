@@ -10,9 +10,7 @@ from telebot import apihelper
 from flask import Flask, request, abort
 from timeloop import Timeloop
 from datetime import timedelta
-from ..db.user_data_validators import is_phone_valid
 from web_shop.log_writer import log_write
-from .texts import set_params_text
 
 bot = WebShopBot(TOKEN)
 app = Flask(__name__)
@@ -45,7 +43,6 @@ def start(message):
 # START -> CART
 @bot.message_handler(func=lambda msg: msg.text == START_KB['cart'])
 def show_cart(message):
-    print('cart')
     customer = Customer.objects.filter(user_id=message.chat.id)
     if not customer:
         customer = Customer.objects.create(user_id=message.chat.id)

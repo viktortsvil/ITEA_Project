@@ -4,7 +4,6 @@ from web_shop.bot.config import DEBUG
 from web_shop.db.models import is_db_empty
 from web_shop.api.setup import start as startAPI
 from web_shop.log_writer import log_write, log_clear
-#gunicorn --reload
 
 
 log_clear()

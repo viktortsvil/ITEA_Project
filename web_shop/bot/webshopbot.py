@@ -6,7 +6,7 @@ from telebot.types import (
     InlineKeyboardMarkup,
     Update)
 from .texts import set_params_text
-from ..db.user_data_validators import is_phone_valid
+from ..db.data_validators import is_phone_valid
 
 from typing import List, Union
 
@@ -43,11 +43,14 @@ class WebShopBot(TeleBot):
     def load_products(self, products, chat_id):
         for product in products:
             buttons = [InlineKeyboardButton(text="Add to Cart", callback_data=f"product-{product.id}")]
-            self.send_message_or_photo(chat_id,
-                                       f"{product.title}\n{product.description}\n"
-                                       f"Category: {product.category.title}\nPrice: {product.price}",
-                                       self.generate_inline_keyboard(buttons),
-                                       product.image.read() if product.image else None)
+            if product.discount_percentage > 0:
+                self.send_message_or_photo(chat_id,
+                                           f"{product.title}\n{product.description}\n"
+                                           f"Category: {product.category.title}\n"
+                                           f"Price: {product.get_price()} "
+                                           f"instead of {product.price}! Sale!",
+                                           self.generate_inline_keyboard(buttons),
+                                           product.image.read() if product.image else None)
         if len(products) == 0:
             self.send_message_or_photo(chat_id,
                                        f"This category contains no products so far")
@@ -70,7 +73,7 @@ class WebShopBot(TeleBot):
         buttons = []
         for item in cart.cart_items:
             text += f"{item.product.title} - {item.count}\n"
-            total += item.product.price * item.count
+            total += item.product.get_price() * item.count
             buttons += [InlineKeyboardButton(text='-', callback_data=f"minus-{item.product.id}"),
                         InlineKeyboardButton(text=f'{item.product.title}', callback_data="unreal_data"),
                         InlineKeyboardButton(text='+', callback_data=f"plus-{item.product.id}")]
@@ -79,7 +82,7 @@ class WebShopBot(TeleBot):
         kb = self.generate_inline_keyboard(buttons) if load_buttons else None
         return text, kb
 
-    def load_cart_data(self, customer, chat_id, load_buttons=True):
+    def load_cart_data(self, customer, chat_id):
         cart = customer.get_or_create_current_cart()[1]
         text, kb = self.generate_cart_message_data(cart)
         self.send_message_or_photo(chat_id, text, kb)
@@ -139,9 +142,9 @@ class WebShopBot(TeleBot):
         age = True if customer.age is not None else False
         if not all([name, surname, address, phone_number, age]):
             return False, f"We miss following information about you to finish the order: " \
-                   f"{'name, ' if not name else ''}" \
-                   f"{'surname, ' if not surname else ''}" \
-                   f"{'address, ' if not address else ''}" \
-                   f"{'phone_number, ' if not phone_number else ''}" \
-                   f"{'age' if not age else ''}.\n\n" + set_params_text
+                          f"{'name, ' if not name else ''}" \
+                          f"{'surname, ' if not surname else ''}" \
+                          f"{'address, ' if not address else ''}" \
+                          f"{'phone_number, ' if not phone_number else ''}" \
+                          f"{'age' if not age else ''}.\n\n" + set_params_text
         return True, ''

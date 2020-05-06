@@ -1,17 +1,7 @@
 from marshmallow import Schema, fields, ValidationError, validate
+from ..db.data_validators import is_phone_valid
 
 
-def is_phone_valid(phone: str):
-    if not phone[0] == '+':
-        raise ValidationError("Invalid Phone Format")
-    if not len(phone) == 13:
-        raise ValidationError("Invalid Phone Format")
-    if not phone[1:].isdigit():
-        raise ValidationError("Invalid Phone Format")
-    return phone
-
-
-# Category #Customer #Cart #Product #Texts #News
 class CategorySchema(Schema):
     id = fields.String()
     title = fields.String(required=True, validate=validate.Length(min=2, max=512))
