@@ -6,7 +6,7 @@ from web_shop.api.setup import start as startAPI
 from web_shop.log_writer import log_write, log_clear
 
 
-log_clear()
+log_write("\n\nRESTARTING BOT..\n\n")
 log_write("STARTING LOGGING..")
 if is_db_empty():
     generate(category=10, product=25, news=5)
