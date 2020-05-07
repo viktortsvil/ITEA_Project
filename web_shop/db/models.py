@@ -37,7 +37,7 @@ class Customer(me.Document):
 
 class CartItem(me.EmbeddedDocument):
     product = me.ReferenceField('Product')
-    count = me.IntField(default=1, min_value=1)
+    count = me.IntField(default=1, min_value=0)
 
     @property
     def get_price(self):

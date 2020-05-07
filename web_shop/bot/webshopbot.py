@@ -109,7 +109,7 @@ class WebShopBot(TeleBot):
                 if item.count == 0:
                     pop = i
                 break
-        if pop:
+        if pop is not None:
             cart.cart_items.pop(pop)
         cart.save()
 
