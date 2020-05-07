@@ -43,14 +43,14 @@ class WebShopBot(TeleBot):
     def load_products(self, products, chat_id):
         for product in products:
             buttons = [InlineKeyboardButton(text="Add to Cart", callback_data=f"product-{product.id}")]
-            if product.discount_percentage > 0:
-                self.send_message_or_photo(chat_id,
-                                           f"{product.title}\n{product.description}\n"
-                                           f"Category: {product.category.title}\n"
-                                           f"Price: {product.get_price()} "
-                                           f"instead of {product.price}! Sale!",
-                                           self.generate_inline_keyboard(buttons),
-                                           product.image.read() if product.image else None)
+            self.send_message_or_photo(chat_id,
+                                       f"{product.title}\n{product.description}\n"
+                                       f"Category: {product.category.title}\n"
+                                       f"Price: {product.get_price()} " +
+                                       (f"instead of {product.price}! Sale!"
+                                        if product.get_price() != product.price else f""),
+                                       self.generate_inline_keyboard(buttons),
+                                       product.image.read() if product.image else None)
         if len(products) == 0:
             self.send_message_or_photo(chat_id,
                                        f"This category contains no products so far")
